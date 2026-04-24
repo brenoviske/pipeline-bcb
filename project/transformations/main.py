@@ -17,9 +17,13 @@ def total_por_uf():
         .groupBy("uf")
         .agg(
             F.sum("carteira_inadimplencia").alias("total_devendo"),
-            F.mean("carteira_inadimplencia").alias("media_saldo"),
+            F.avg("carteira_inadimplencia").alias("media_saldo"),
             F.max("carteira_inadimplencia").alias("max_saldo"),
-            F.sum(F.col("esta_devendo").cast("int")).alias("total_devedores")
+            F.min('carteira_inadimplencia').alias("min_saldo"),
+            F.sum(F.col("esta_devendo").cast("int")).alias("total_devedores"),
+            F.avg(F.col("esta_devendo").cast("int")).alias("media_devedores"),
+            F.min(F.col("esta_devendo").cast("int")).alias("min_devedores"),
+            F.max(F.col("esta_devendo").cast("int")).alias("max_devedores"),
         )
     )
 
@@ -116,6 +120,28 @@ def por_ano():
         )
     )
 
+# ----------------------------------------- 
+# 4 ANALYSIS PER POPULATION 
+# -----------------------------------------
+
+@dlt.view(name = 'raw_population_data')
+def raw_population_data():
+  return spark.read.parquet('/Volumes/banco-central-dados/bronze/raw_data/populacao_absoluta.parquet')
 
 
+@dlt.table(name = 'population_per_state', comment = 'Population by State')
+def population_per_state():
+
+  df = dlt.read('raw_population_data')
+
+  return (
+    df.groupBy('D1N').agg(
+      F.sum('V').alias('total_populacao') ,
+      F.mean('V').alias('media_populacao'),
+      F.max('V').alias('max_populacao'),
+      F.min('V').alias('min_populacao'),
+
+    )
+    
+  )
 
